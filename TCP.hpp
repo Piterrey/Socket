@@ -33,7 +33,7 @@ class Socket {
 		 		};
 };
 
-class socketUDP:public Socket{
+class socketUDP:socketUDP:Socket(SOCK_DGRAM){
 	private:	int ret_code;
 	public:		
 			SocketUDP(){
@@ -62,14 +62,14 @@ class socketUDP:public Socket{
 						     };
 }; 
 
-class ClientUDP:public Socket{
+class ClientUDP:socketUDP{
 	private:
 	public:		ClientUDP();
 			~ClientUDP();
 
 };
 
-class ServerUDP:public Socket{
+class ServerUDP:socketUDP{
 	private:
 	public:		ServerUDP(int port){
 						Address*myself;
@@ -91,7 +91,7 @@ class ServerUDP:public Socket{
 
 };
 
-class SocketTCP::public Socket:Socket(SOCK_DGRAM) {
+class SocketTCP::SocketTCP:Socket(SOCK_DGRAM) {
 	public:		
 			SocketTCP();
 			~SocketTCP(){
@@ -99,7 +99,7 @@ class SocketTCP::public Socket:Socket(SOCK_DGRAM) {
 				    };
 }; 
 
-class ClientTCP:public Socket{	
+class ClientTCP:SocketTCP{	
 	private:	Connessione* connessione;
 			int ret_code;
 	public:		ClientTCP();
@@ -127,7 +127,7 @@ class ClientTCP:public Socket{
 					  return strdup(buffer);
 				      };
 };
-class ServerTCP:Public Socket
+class ServerTCP:SocketTCP
 	private:	Lista* lista_connessioni;
 	public:		ServerTCP(int port){
 						myself_addr = (Addr*)malloc(sizeof(Addr));
@@ -189,12 +189,12 @@ class Connessione:public Nodo {
 };
 
 class Conn_Client:public Connessione {
-	public:		Conn_Client(int sock_id);
+	public:		Conn_Client(int sock_id,char* Address);
 			~Conn_Client();//cippa
 };
 
 class Conn_Server:public Connessione {
-	public:		Conn_Server(int conn_id);
+	public:		Conn_Server(int conn_id,char* Address);
 			~Conn_Server();//close()
 };
 
