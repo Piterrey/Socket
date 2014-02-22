@@ -243,11 +243,16 @@ class Iterator{
 
 class Connessione:public Nodo {
 	private:	int conn_id;
-	public:		Connessione(int conn_id);
+	public:		Connessione(int conn_id,Address* dest);
 			~Connessione();
-			bool invia(char* msg);//send()
-			char* ricevi();//recv()
+			bool invia(char* msg);
+			char* ricevi();
 };
+
+class Connessione::Connessione(int conn_id,Address* dest)
+				{
+					connessione=connect(sock_id,server,sizeof(server);
+				}
 
 class Connessione::bool invia(char* msg)
 				{
@@ -277,3 +282,4 @@ class Conn_Server:public Connessione {
 
 /*Iterator* it;
 for( it=lista->create_Iterator();elemento = it->move_next(); elemento->do_something())*/
+
