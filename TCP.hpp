@@ -33,10 +33,10 @@ class Socket {
 		 		};
 };
 
-class socketUDP:socketUDP:Socket(SOCK_DGRAM){
+class SocketUDP:public Socket{
 	private:	int ret_code;
 	public:		
-			SocketUDP(){
+			SocketUDP():Socket(SOCK_DGRAM){
 					
 				   };
 			~SocketUDP()
@@ -51,34 +51,34 @@ class socketUDP:socketUDP:Socket(SOCK_DGRAM){
 							  struct sockaddr_in mitt_addr;
 							  int len_addr;
 							  int ret_code;
-							  
+
 							  len_addr = sizeof(struct sockaddr_in);
 							  ret_code = recvfrom(sock_id,buffer,maxbuffer,0,(struct sockaddr*)&mitt_addr(socklen_t*)&len_addr);
 							  if(ret_code <= 0) return NULL;   
-							  
+
 							  sender ->set_addr(&mitt_addr);
 							  buffer[ret_code] = '\0';
 							  return strdup(buffer);
 						     };
 }; 
 
-class ClientUDP:socketUDP{
+class ClientUDP:public SocketUDP{
 	private:
 	public:		ClientUDP();
 			~ClientUDP();
 
 };
 
-class ServerUDP:socketUDP{
+class ServerUDP:public SocketUDP{
 	private:
 	public:		ServerUDP(int port){
 						Address*myself;
 						struct sockaddr_in* addr;
 						if(sock_id < 0) errore("Socket non aperto!\n",-1);
-						
+
 						myself = new Address("0.0.0.0",port);
 						addr = myself->get_addr();
-						
+
 						if( bind (sock_id,
 							(struct sockaddr*) addr,
 							(socklen_t) sizeof(struct sockaddr)))
@@ -127,7 +127,7 @@ class ClientTCP:SocketTCP{
 					  return strdup(buffer);
 				      };
 };
-class ServerTCP:SocketTCP
+class ServerTCP:SocketTCP{
 	private:	Lista* lista_connessioni;
 	public:		ServerTCP(int port){
 						myself_addr = (Addr*)malloc(sizeof(Addr));
@@ -135,7 +135,7 @@ class ServerTCP:SocketTCP
 						inet_aton("0.0.0.0", &(myself_addr -> sin_addr));
 						myself_addr -> sin_port = htons(port);
 						for(i=0;i<8;i++) myself_addr -> sin_zero[i] = 0;
-						
+
 						len_addr = sizeof(sockaddr_in);
 						ret_code = bind(sockID, (struct sockaddr *)myself_addr,(socklen_t) len_addr);
 					   };//bind()-listen()
