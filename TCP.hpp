@@ -140,10 +140,16 @@ class ServerTCP:SocketTCP{
 
 class Nodo{
 	private:	Nodo* _next;
-	public:		Nodo(Nodo* next);
+	public:		Nodo(Nodo* next){
+					_next= next;
+				}
 			~Nodo();		
-			void set_next(Nodo*);
-			Nodo* get_next();
+			void set_next(Nodo* next){
+				_next= next;
+			}
+			Nodo* get_next(){
+				return _next;
+			}
 };
 
 class Iterator;
@@ -155,22 +161,83 @@ class Lista{
 								remove_Node(curr->get_next());
 								deletedelete(curr);
 							}
-						     };
+						    }
 	public:		Lista();
-			~Lista(){remove_Node(first);}
-			Nodo* add_node(Nodo*);
-			Iterator* create_iterator();
+			~Lista(){
+				remove_Node(first);
+			}
+
+			Nodo* add_node(Nodo* nuovo){
+				Nodo* ultimo;
+
+				if(ultimo=ultimo_nodo())
+					ultimo->set_next(nuovo);
+				else
+					_first= nuovo;
+			}
+
+			Iterator* create_iterator()
+			{
+				return new Iterator(this);
+			}
+
+			Nodo* get_first(){
+				return _first;
+			}
+
+	private:
+			Nodo* ultimo_nodo(){ //Ritorna il puntatore all'ultimo Nodo della lista. NULL se la lista non possiede nodi.
+
+				if(!first)
+					return NULL;
+
+				Nodo* ret= _first;
+
+				while(ret->get_next())
+					ret= ret->get_next();
+
+				return ret;
+			}
 };			
 
 class Iterator{
-	private:	Lista* lista;
-			Nodo* current;
-	public:		Iterator(Lista* lista);
-			~Iterator();
-			Nodo* get_current();
-			Nodo* move_next();
-			Nodo* move_first();
+	private:	Lista* _lista;
+				Nodo* _current;
+	public:		
+
 			bool is_done;
+
+			Iterator(Lista* lista){
+					_lista= lista;
+					_current= lista->get_first();
+
+					if(_current->get_next())
+						is_done= false;
+					else
+						is_done= true;
+			}
+
+			~Iterator();
+
+			Nodo* get_current(){
+				return _current;
+			}
+
+			Nodo* move_next(){
+
+				if(_current->get_next())
+				{
+					_current= _current->get_next();
+					is_done= false;
+				}
+				else
+					is_done= true;
+			}
+
+			Nodo* move_first(){
+				_current= _lista->get_first();
+				is_done= false;
+			}
 };
 
 class Connessione:public Nodo {
