@@ -17,8 +17,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Vallaurisoft; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, 
- * Boston, MA  02110-1301  USA
- */
+ * Boston, MA  02110-1301  USA*/
+ 
+#define MAX_BUFFER 4096
 
 class Socket {
 	private: int sock_id;
@@ -42,13 +43,13 @@ class SocketUDP:public Socket{
 								
 							   };
 			char* ricevi(Address* sender,int maxbuffer){
-							  char buffer[maxbuffer+1];
+							  char buffer[MAX_BUFFER+1];
 							  struct sockaddr_in mitt_addr;
 							  int len_addr;
 							  int ret_code;
 
 							  len_addr = sizeof(struct sockaddr_in);
-							  ret_code = recvfrom(sock_id,buffer,maxbuffer,0,(struct sockaddr*)&mitt_addr(socklen_t*)&len_addr);
+							  ret_code = recvfrom(sock_id,buffer,MAX_BUFFER,0,(struct sockaddr*)&mitt_addr(socklen_t*)&len_addr);
 							  if(ret_code <= 0) return NULL;   
 
 							  sender ->set_addr(&mitt_addr);
@@ -250,17 +251,17 @@ class Connessione:public Nodo {
 
 class Connessione::bool invia(char* msg)
 				{
-					ret_code=send(this, msg, strlen(msg), 0);
+					ret_code=send(conn_id, msg, strlen(msg), 0);
 					if(ret_code<0) return false;
 					else return true;
 				}
 class Connessione::char*ricevi()
 			{
-				char buffer[maxbuffer+1];
-					  ret_code = recv(connessione, buffer, maxbuffer, 0); 
-					  if(ret_code <= 0) return null;
-					  buffer[ret_code]='\0';
-					  return strdup(buffer);
+				char buffer[MAX_BUFFER+1];
+				ret_code = recv(conn_id, buffer, MAX_BUFFER, 0); 
+				if(ret_code <= 0) return null;
+				buffer[ret_code]='\0';
+				return strdup(buffer);
 			}
 
 class Conn_Client:public Connessione {
