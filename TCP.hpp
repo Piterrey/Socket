@@ -36,15 +36,10 @@ class Socket {
 class SocketUDP:public Socket{
 	private:	int ret_code;
 	public:		
-			SocketUDP():Socket(SOCK_DGRAM){
-					
-				   };
-			~SocketUDP()
+			SocketUDP();
+			~SocketUDP();
 			bool invia(char* msg,Address* dest){
-								dest_addr = dest->get_addr();
-								ret_code = send_to( sock_id,msg,strlen(msg)+1,0,(struct sockaddr*) dest_addr,(socklen_t)sizeof(dest_addr));
-								if(ret_code<0) return false;
-								      else return true;
+								
 							   };
 			char* ricevi(Address* sender,int maxbuffer){
 							  char buffer[maxbuffer+1];
@@ -61,6 +56,8 @@ class SocketUDP:public Socket{
 							  return strdup(buffer);
 						     };
 }; 
+
+SocketUDP()::SocketUDP():Socket(SOCK_DGRAM){  };
 
 class ClientUDP:public SocketUDP{
 	private:
@@ -120,11 +117,7 @@ class ClientTCP:SocketTCP{
 							else return true;
 					     };
 			char* ricevi(int maxbuffer){
-					  char buffer[maxbuffer+1];
-					  ret_code = recv(connessione, buffer, maxbuffer, 0); 
-					  if(ret_code <= 0) return null;
-					  buffer[ret_code]='\0';
-					  return strdup(buffer);
+					  
 				      };
 };
 class ServerTCP:SocketTCP{
@@ -187,6 +180,21 @@ class Connessione:public Nodo {
 			bool invia(char* msg);//send()
 			char* ricevi();//recv()
 };
+
+class Connessione::bool invia(char* msg)
+				{
+					ret_code=send(this, msg, strlen(msg), 0);
+					if(ret_code<0) return false;
+					else return true;
+				}
+class Connessione::char*ricevi()
+			{
+				char buffer[maxbuffer+1];
+					  ret_code = recv(connessione, buffer, maxbuffer, 0); 
+					  if(ret_code <= 0) return null;
+					  buffer[ret_code]='\0';
+					  return strdup(buffer);
+			}
 
 class Conn_Client:public Connessione {
 	public:		Conn_Client(int sock_id,char* Address);
