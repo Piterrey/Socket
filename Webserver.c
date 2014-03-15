@@ -1,144 +1,186 @@
 /*
- * SocketTCP.c
- * This file is part of VallauriSoft
+ * WebServer.c
+ * This file is part of Vallaurisoft
  *
- * Copyright (C) 2014 - Ghisolfo
+ * Copyright (C) 2014 - Thread
  *
- * VallauriSoft is free software; you can redistribute it and/or modify
+ * Vallaurisoft is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * VallauriSoft is distributed in the hope that it will be useful,
+ * Vallaurisoft is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with VallauriSoft; if not, write to the Free Software
+ * along with Vallaurisoft; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, 
  * Boston, MA  02110-1301  USA
  */
 
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#define MAX_CONN 42
-#define MYSELF_IP "0.0.0.0"
 #define MAX_BUFFER 4096
 
-void errore(char*,int);
+#include <iostream>
 
-typedef struct sockaddr_in Addr;
+using namespace std;
 
-int main (int argc, char *argv[])
-{
-    char buffer[MAX_BUFFER+1], *msg;
-    int port, sockID,len_addr, ret_code, i, connID, len_msg;
-    Addr *client_addr , *myself_addr;
-    
-    char response[]="HTTP/1.1 200 OK\n\
-Date: Mon, 23 May 2005 22:38:34 GMT\n\
-Server: Apache/1.3.3.7 (Unix) (Red-Hat/Linux)\n\
-Last-Modified: Wed, 08 Jan 2003 23:11:55 GMT\n\
-ETag: \"3f80f-1b6-3e1cb03\"\n\
-Content-Type: text/html; charset=UTF-8\n\
-Accept-Ranges: bytes\n\
-Connection: close\n\
-\n\
-<html>\n\
-<head>\n\
-  <title>Esempio</title>\n\
-  <link rel=\"stylesheet\" media=\"screen\" href=\"/213/213.css?v=8may2013\">\n\
-</head>\n\
-<body>\n\
-  Hello World, this is a very simple HTML document.\n\
-</body>\n\
-</html>\n";
-    
-    if(argc != 2) 
-    {
-        printf("USAGE: %s PORT:\n",argv[0]);
-        return (-1);
-    }
-    
-    port = atoi(argv[1]);
-    //msg = argv[2];
-    
-    printf("Creo un socket...\n");
-    sockID = socket(AF_INET, SOCK_STREAM,0); //apro il socket
-    if(sockID <= 0) errore("ERRORE nella creazione del socket\n",-2);
-    
-    
-    printf("Associo il socket alla porta %d... \n", port);
-    
-    myself_addr = (Addr*)malloc(sizeof(Addr));
-    myself_addr -> sin_family = AF_INET;
-    inet_aton(MYSELF_IP, &(myself_addr -> sin_addr));
-    myself_addr -> sin_port = htons(port);
-    for(i=0;i<8;i++) myself_addr -> sin_zero[i] = 0;
-    
-    len_addr = sizeof(Addr);
-    ret_code = bind(sockID, (struct sockaddr *)myself_addr,(socklen_t) len_addr); //assegno qualche porta
-    if(ret_code)     errore("ERRORE nella assegnazione della porta\n",-3);
-    
-    printf("Indico il numero di connesioni....\n");
-    ret_code = listen(sockID, MAX_CONN); // si dice quante connessioni può accettare
-    if(ret_code)  errore("ERRORE nell'assegnare il numero massimo di connessioni\n",-4);
-    
-    printf("Attendo che il client mi contatti per stabilire una connessione....\n");
-    len_addr = sizeof(Addr);
-    client_addr = (Addr*) malloc(sizeof(Addr));
-    
-    connID = accept(sockID,(struct sockaddr*) client_addr, (socklen_t* )&len_addr); //apro la connessione
-    if(connID <= 0) errore("ERRORE nell'accettare una connessione\n",-5);
-    
-    printf("Accettata una connessione da %s : %d ...\n", inet_ntoa(client_addr->sin_addr), ntohs(client_addr->sin_port));
-    
-    printf("Attendo che il client mi dica qualcosa....\n");
-    ret_code = recv(connID, buffer, MAX_BUFFER, 0); //ricevo i dati
-    
-    if(ret_code <= 0)   errore("ERRORE durante la ricezione dal client\n",-6);
-    buffer[ret_code]='\0';
-    printf("Ho ricevuto : '%s' dal client.\n", buffer);
-    
-    /*printf("Rispondo al client inviandogli '%s'.... \n",msg);
-    len_msg = strlen(msg)+1;
-    ret_code = send(connID, msg, len_msg, 0); //mando i dati
-    if(ret_code != len_msg) errore("ERRORE durante l'invio della risposta al client\n",-7);*/
-    
-    printf("Rispondo al client inviandogli '%s'.... \n",response);
-    len_msg = strlen(response)+1;
-    ret_code = send(connID, response, len_msg, 0); //mando i dati
-    if(ret_code != len_msg) errore("ERRORE durante l'invio della risposta al client\n",-8);
-    
-    printf("Chiudo la connessione-- \n");
-    close(connID);
-    
-    printf("Chiudo il Socket....\n"); 
-    shutdown(sockID, SHUT_RDWR); //chiudo
-    
-    free(client_addr);
-    free(myself_addr);
-    return 0;
-    
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include "errore.h"
+#include "Socket.hpp"
+#include "Address.hpp"
+#include "List.hpp"
+#include "TCP.hpp"
+#include "WebPage.h"
+#include <pthread.h>
+#include <errno.h>
+#include <time.h>
+
+#define LEN_MESSAGES 10
+
+
+/*struttura thread param*/
+typedef struct {   int thread_num;
+		   Conn_Server connection;} Thread_param;
+
+
+
+/*routine del thread*/
+void* ExecuteThis( void* conn_id) {
+
+	Thread_param * param;
+
+	param =(Thread_param) conn_id;
+
+	/*Riceve la richiesta dal client*/
+	msgrec = conn_id->connection->ricevi();
+
+	/*Richiesta*/
+	printf("#Richiesta#\n%s\n--------------\n\n",msgrec ); 
+
+	msg=stringConcat(header,CheckHttpRequest(msgrec));
+
+	/*Invia la risposta*/
+	conn_id->connection->invia(msg);
+
+	printf("#Risposta#\n%s\n---------------\n\n",msg);  
+	
+	pthread_exit(NULL);
 }
 
 
+/*int str2int(char* s){
+    int ret;
+    for(ret=0;*s;s++)
+	    ret=ret*10+*s-'0';
+    return(ret);
+}*/
 
-void errore(char*str,int n)
-{
-    printf(str);
-    printf("%s(%d)\n",strerror(errno),errno);
-    exit(n);
+int main(int argc, char** argv) {
+  
+	pthread_t * my_threads;
+	Thread_param * param;
+
+	int ret_code;
+	int i;
+	int num_threads;
+
+	Thread_param* curr_param;
+
+	char* msgrec;
+	char* msg;
+	char* header = "HTTP/1.1 200 OK\n\
+			Date: Mon, 23 May 2005 22:38:34 GMT\n\
+			Server: Apache/1.3.3.7 (Unix) (Red-Hat/Linux)\n\
+			Last-Modified: Wed, 08 Jan 2003 23:11:55 GMT\n\
+			Accept-Ranges: bytes\n\
+			Connection: close\n\
+			\n";
+
+	int server_port;
+
+	if (argc !=2) {	
+		printf("USAGE:%s PORT\n",argv[0]);
+		return -1; 
+	}
+	/*-----------------------apro il server------------------------------------------------------------------------------*/
+
+	server_port = atoi(argv[1]);
+
+	/*Creo un client singolo su cui operare*/
+	Conn_Server* client;	
+	Address* addr = new Address("127.0.0.1",server_port);
+	ServerTCP* server = new ServerTCP(server_port);
+
+	/*-----------------------alloco le zone di memoria-------------------------------------------------------------------*/
+	
+	/*creo la zona di memoria per i thread*/
+	my_threads = (pthread_t*) malloc (sizeof (pthread_t));
+
+	/*creo la zona di memoria per i parametri dei thread*/
+	param = (Thread_param*) malloc (sizeof (Thread_param));
+
+	/*-----------------------accetto le connesioni, allargo la zona di memoria e azzero il contatore---------------------*/
+
+	i=0;
+	while ( i< MAX_CONN) {
+			if(client = server->accetta(addr))
+			{
+				/*-------------------allargo la memoria------------------------------------------------------*/
+				
+				/*rialloco la memoria allargandola aggiongendo un nuovo elemento*/
+				my_threads = realloc(my_threads, sizeof (pthread_t)*i+1);
+
+				/*rialloco la memoria allargandola aggiungendo un nuovo elmento*/
+				param = realloc(param, sizeof (Thread_param)*i+1);
+
+				/*passo il valore del puntatore per avere in current param i dati correnti*/
+				curr_param = param+i;
+
+				/*-------------------inserisco i dati nella struct-------------------------------------------*/
+				
+				/*definisco il numero del thread*/
+				curr_param->thread_num = i;
+
+				/*metto nel campo connection il risultato dell'accept*/
+				curr_param->connection = client;
+
+				/*-------------------istanzio il thread------------------------------------------------------*/
+
+				/*istanzio il thread*/
+				ret_code = pthread_create( (my_threads + i), NULL, ExecuteThis , (void*) curr_param);
+
+				/*if di controllo*/
+				if (ret_code) {
+							printf("Creazione Thread Fallita \nerror code:%d\n",i);
+							printf("%d:(%s)\n",errno,strerror(errno));
+					      }
+				else { 
+					printf("creato il thread numero %d\n",i);
+					i++;
+					num_threads++;
+				     }
+			}
+		}
+
+	/*----------------------attendo che i thread terminino---------------------------------------------------------------*/
+	for(i=0;i<num_threads;i++)
+		pthread_join(*(my_threads + i),NULL);
+
+	/*----------------------libero le zone di memoria e distruggo le strutture-------------------------------------------*/
+	free(param);
+	free(my_threads);
+	delete(addr);
+	delete(server);
+	delete(client);
+	
+return(0);
 }
-
-
-
-
-
 
